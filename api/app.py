@@ -97,10 +97,8 @@ def edit_temp_json():
     if request.method == 'POST':
         try:
             new_temp_json_data = request.form.get('temp_json_data')
-            print (new_temp_json_data)
             if new_temp_json_data:
-                temp_json_data = json.loads(new_temp_json_data)
-                os.environ['TEMP_JSON_DATA'] = json.dumps(temp_json_data, indent=4, ensure_ascii=False)
+                json.loads(new_temp_json_data)  # 只校验格式，内容由浏览器保存
                 #flash('TEMP_JSON_DATA 已更新', 'success')
                 #flash('TEMP_JSON_DATA đã được cập nhật', 'Thành công^^')
                 return jsonify({'status': 'success'})  # 返回成功状态
@@ -294,16 +292,19 @@ def config(url):
 
 @app.route('/generate_config', methods=['POST'])
 def generate_config():
+    output_dir = tempfile.TemporaryDirectory()
     try:
         selected_template_index = request.form.get('template_index')
         if not selected_template_index:
             flash('请选择一个配置模板', 'error')
             flash('Vui lòng chọn một mẫu cấu hình', 'Lỗi!!!')
             return redirect(url_for('index'))
-        temp_json_data = json.dumps(os.environ['TEMP_JSON_DATA'], indent=4, ensure_ascii=False)
+        providers_data = json.loads(request.form.get('temp_json_data', os.environ['TEMP_JSON_DATA']))
+        providers_data['save_config_path'] = os.path.join(output_dir.name, 'config.json')
+        temp_json_data = json.dumps(json.dumps(providers_data, ensure_ascii=False), indent=4, ensure_ascii=False)
         # 修改这里：执行main.py并传递模板序号作为命令行参数，如果未指定，则传递空字符串
         subprocess.check_call([sys.executable, 'main.py', '--template_index', selected_template_index, '--temp_json_data', temp_json_data])
-        CONFIG_FILE_NAME = json.loads(os.environ['TEMP_JSON_DATA']).get("save_config_path", "config.json")
+        CONFIG_FILE_NAME = providers_data["save_config_path"]
         if CONFIG_FILE_NAME.startswith("./"):
             CONFIG_FILE_NAME = CONFIG_FILE_NAME[2:]
         # 设置配置文件的完整路径
@@ -325,6 +326,8 @@ def generate_config():
     except Exception as e:
         #flash(f'Error occurred while generating the configuration file: {str(e)}', 'error')
         return Response(json.dumps({'status': 'error', 'message_CN': '认真看刚刚的网页说明、github写的reademe文件;', 'message_VN': 'Quá thời gian phân tích đăng ký: Vui lòng kiểm tra xem liên kết đăng ký có chính xác không hoặc vui lòng chuyển sang "nogroupstemplate" và thử lại; Vui lòng không chỉnh sửa giá trị "tag", trừ khi bạn hiểu nó làm gì;', 'message_EN': 'Subscription parsing timeout: Please check if the subscription link is correct or please change to "no_groups_template" and try again; Please do not modify the "tag" value unless you understand what it does;'}, indent=4,ensure_ascii=False), content_type='application/json; charset=utf-8', status=500)
+    finally:
+        output_dir.cleanup()
     #return redirect(url_for('index'))
 
 @app.route('/clear_temp_json_data', methods=['POST'])
