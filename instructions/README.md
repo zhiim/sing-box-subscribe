@@ -110,13 +110,13 @@ You can star/watch the project or follow the author to be notified of new featur
 
 ## Steps for page manipulation
 
-Open your deployed website, edit the `Provider JSON` box, select a configuration template, and click `Generate`. The form sends the JSON and template selection together; there is no separate Save step. 👉🏻[Parameter Fill View](https://github.com/Toperlock/sing-box-subscribe/tree/main/instructions#providersjson-file)
+[Sample website](https://sing-box-subscribe.vercel.app/). Open your deployed website, edit the contents of the `编辑服务器 TEMP_JSON_DATA` box on the right side, click `保存`, select the configuration template in the upper left corner, and click `生成配置文件`. 👉🏻[Parameter Fill View](https://github.com/Toperlock/sing-box-subscribe/tree/main/instructions#providersjson-file)
 
 ios with the shortcut command to copy the content of the web page, or too much content to choose to download the file to solve the problem of the file suffix by yourself. 👉🏻[Shortcut Install](https://www.icloud.com/shortcuts/75fd371e0aa8438a89f715238a21ee68)
 
 Android use chrome browser to open the webpage to generate the configuration file (please go to the browser Settings - Accessibility to reduce the webpage), long press the content, select it in full, share it to the code editor, check whether the editor shows the content is complete. 👉🏻[Editor Install](https://mt2.cn/download/)
 
-Submitted provider data is used only for its request. Both the form and `/config/URL` generate into an independent temporary directory, which is removed after the response content is read. Reloading the homepage displays the repository’s `providers.json` defaults. The old `/edit_temp_json`, `/update_providers`, and `/clear_temp_json_data` endpoints have been removed.
+**Note that after clicking Save, go to Generate Configuration File as soon as possible, otherwise the content you fill in will remain on the webpage, and other people can browse to it when they open the website. Can't think of a solution at the moment**
 
 <div align="left">
   <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/f794806c-edfc-4951-a216-6e38646f3791" alt="how-to-use" width="50%" />
@@ -293,9 +293,9 @@ In this file, you can add subscription links and basic settings.
 
 > Outbound rules that need to be proxied in the routing rules will be set to the corresponding `proxy` outbound, and the script will automatically create a corresponding `dns server` for the proxy outbound, using the `dns server` specified in the `proxy` setting.
 
-- `save_config_path`: Required for local CLI use. Set the path for the generated configuration file. Web requests override this value with a request-specific temporary path.
+- `save_config_path`: Required. Set the path for the generated configuration file.
 
-- `auto_backup`: Optional for local CLI use; disabled for web requests.
+- `auto_backup`: Optional.
 > When set to true, the script will rename the currently used sing-box configuration file to `original_filename.current_time.bak` for backup purposes, in case an incorrect configuration file is generated and needs to be restored.
 
 - `exclude_protocol`: Optional.
