@@ -12,8 +12,16 @@ from datetime import datetime, timedelta
 app = Flask(__name__, template_folder='../templates')  # 指定模板文件夹的路径
 app.secret_key = 'sing-box'  # 替换为实际的密钥
 data_json = {}
-os.environ['TEMP_JSON_DATA'] = '{"subscribes":[{"url":"URL","tag":"tag_1","enabled":true,"emoji":1,"subgroup":"","prefix":"","User-Agent":"clash.meta"},{"url":"URL","tag":"tag_2","enabled":false,"emoji":0,"subgroup":"命名/named","prefix":"❤️","User-Agent":"clashmeta"}],"auto_set_outbounds_dns":{"proxy":"","direct":""},"save_config_path":"./config.json","auto_backup":false,"exclude_protocol":"ssr","config_template":"","Only-nodes":false}'
-data_json['TEMP_JSON_DATA'] = '{"subscribes":[{"url":"URL","tag":"tag_1","enabled":true,"emoji":1,"subgroup":"","prefix":"","User-Agent":"clash.meta"},{"url":"URL","tag":"tag_2","enabled":false,"emoji":0,"subgroup":"命名/named","prefix":"❤️","User-Agent":"clashmeta"}],"auto_set_outbounds_dns":{"proxy":"","direct":""},"save_config_path":"./config.json","auto_backup":false,"exclude_protocol":"ssr","config_template":"","Only-nodes":false}'
+
+providers_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    '..',
+    'providers.json'
+)
+with open(providers_path, 'r', encoding='utf-8') as f:
+    default_json = json.dumps(json.load(f), ensure_ascii=False)
+os.environ['TEMP_JSON_DATA'] = default_json
+data_json['TEMP_JSON_DATA'] = default_json
 
 # 获取系统默认的临时目录路径
 TEMP_DIR = tempfile.gettempdir()
