@@ -4,25 +4,12 @@
             "url": "URL",
             "tag": "tag_1",
             "enabled": true,
-            "emoji": 1,
+            "emoji": 0,
             "subgroup": "",
             "prefix": "",
-            "User-Agent":"clash.meta"
-        },
-        {
-            "url": "URL",
-            "tag": "tag_2",
-            "enabled": false,
-            "emoji": 0,
-            "subgroup": "命名/named",
-            "prefix": "❤️",
-            "User-Agent":"clashmeta"
+            "User-Agent":""
         }
     ],
-    "auto_set_outbounds_dns":{
-        "proxy": "",
-        "direct": ""
-    },
     "save_config_path": "./config.json",
     "auto_backup": false,
     "exclude_protocol":"ssr",
