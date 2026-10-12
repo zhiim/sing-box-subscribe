@@ -13,16 +13,6 @@ https://xxxxxxx.vercel.app/config/https://xxxxxxsubscribe?token=123456&file=http
 https://xxxxxxx.vercel.app/config/https://xxxxxxsubscribe?token=123456&file=2
 ```
 
-网页生成时，在同一个表单中填写 Provider JSON、选择模板，然后点击“生成配置”；不再需要先保存。提交内容仅用于本次请求，刷新首页会重新显示 `providers.json` 中的默认内容。
-
-网页和 `/config/URL` 使用各自独立的临时文件，返回结果后清理。网页请求中的 `save_config_path` 和 `auto_backup` 会被覆盖；本地 CLI 仍使用这些设置。
-
-回归测试（先安装 `requirements.txt` 中的依赖）：
-
-```bash
-python -m unittest discover -s tests -v
-```
-
 本地python执行脚本命令：
 
 ```

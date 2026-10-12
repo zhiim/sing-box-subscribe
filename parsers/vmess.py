@@ -62,6 +62,7 @@ def parse(data):
         else:
             proxy_str = tool.b64Decode(info).decode('utf-8')
     except:
+        print(info)
         return None
     try:
         item = json.loads(proxy_str)

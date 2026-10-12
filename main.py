@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 from urllib.parse import urlparse
 from collections import OrderedDict
+from api.app import TEMP_DIR
 from parsers.clash2base64 import clash2v2ray
 from gh_proxy_helper import set_gh_proxy
 
@@ -222,6 +223,7 @@ def get_parser(node):
 
 def get_content_from_url(url, n=10):
     UA = ''
+    print('处理: \033[31m' + url + '\033[0m')
     # print('Đang tải link đăng ký: \033[31m' + url + '\033[0m')
     prefixes = ["vmess://", "vless://", "ss://", "ssr://", "trojan://", "tuic://", "hysteria://", "hysteria2://",
                 "hy2://", "wg://", "wireguard://", "http2://", "socks://", "socks5://"]
@@ -291,6 +293,7 @@ def get_content_from_url(url, n=10):
 
 
 def get_content_form_file(url):
+    print('处理: \033[31m' + url + '\033[0m')
     # print('Đang tải link đăng ký: \033[31m' + url + '\033[0m')
     # encoding = tool.get_encoding(url)
     file_extension = os.path.splitext(url)[1]  # 获取文件的后缀名
@@ -587,6 +590,7 @@ if __name__ == '__main__':
         providers = load_json('providers.json')  # 加载本地 providers.json
     if providers.get('config_template'):
         config_template_path = providers['config_template']
+        print('选择: \033[33m' + config_template_path + '\033[0m')
         # print ('Mẫu cấu hình sử dụng: \033[33m' + template_list[uip] + '.json\033[0m')
         response = requests.get(providers['config_template'])
         response.raise_for_status()
