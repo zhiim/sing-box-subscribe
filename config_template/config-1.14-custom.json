@@ -659,10 +659,6 @@
         "action": "sniff"
       },
       {
-        "rule_set": ["override_destination"],
-        "action": "sniff-override-destination"
-      },
-      {
         "action": "hijack-dns",
         "protocol": "dns"
       },
@@ -936,13 +932,6 @@
         "tag": "voxi",
         "type": "remote",
         "url": "https://raw.githubusercontent.com/zhiim/dotfiles/master/dot_config/sing-box/rule_set/voxi.srs",
-        "format": "binary",
-        "update_interval": "24h"
-      },
-      {
-        "tag": "override_destination",
-        "type": "remote",
-        "url": "https://raw.githubusercontent.com/zhiim/dotfiles/master/dot_config/sing-box/rule_set/override-destination.srs",
         "format": "binary",
         "update_interval": "24h"
       },
