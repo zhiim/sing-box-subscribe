@@ -1,0 +1,978 @@
+{
+  "log": {
+    "disabled": false,
+    "level": "info",
+    "output": "sing-box.log",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "fakeip",
+        "type": "fakeip",
+        "inet4_range": "198.18.0.0/16",
+        "inet6_range": "fdfe:dcba:9876::1/64"
+      },
+      {
+        "tag": "hosts",
+        "type": "hosts",
+        "predefined": {
+          "dns.alidns.com": ["223.5.5.5", "223.6.6.6"],
+          "dns.google": ["8.8.8.8", "8.8.4.4"]
+        }
+      },
+      {
+        "tag": "domestic",
+        "type": "https",
+        "server": "dns.alidns.com",
+        "server_port": 443,
+        "path": "/dns-query",
+        "domain_resolver": "hosts"
+      },
+      {
+        "tag": "foreign",
+        "type": "https",
+        "server": "dns.google",
+        "server_port": 443,
+        "path": "/dns-query",
+        "domain_resolver": "hosts",
+        "detour": "🥤 默认"
+      },
+      {
+        "tag": "foreign_global",
+        "type": "https",
+        "server": "dns.google",
+        "server_port": 443,
+        "path": "/dns-query",
+        "domain_resolver": "hosts",
+        "detour": "🪐 GLOBAL"
+      }
+    ],
+    "rules": [
+      {
+        "query_type": ["HTTPS", "SVCB"],
+        "action": "predefined",
+        "rcode": "NOERROR"
+      },
+      {
+        "rule_set": [
+          "qiufen_ad_doamin",
+          "category_ads_domain",
+          "category_porn_domain",
+          "blacklist"
+        ],
+        "action": "predefined",
+        "rcode": "NXDOMAIN"
+      },
+      {
+        "action": "evaluate",
+        "server": "hosts"
+      },
+      {
+        "match_response": true,
+        "ip_accept_any": true,
+        "action": "respond"
+      },
+      {
+        "rule_set": ["private_domain", "fakeip_filter"],
+        "action": "route",
+        "server": "domestic"
+      },
+      {
+        "rule_set": ["direct_apps"],
+        "action": "route",
+        "server": "domestic"
+      },
+      {
+        "clash_mode": "direct",
+        "action": "route",
+        "server": "domestic"
+      },
+      {
+        "clash_mode": "global",
+        "query_type": ["A", "AAAA"],
+        "action": "route",
+        "server": "fakeip",
+        "rewrite_ttl": 1
+      },
+      {
+        "clash_mode": "global",
+        "action": "route",
+        "server": "foreign_global"
+      },
+      {
+        "rule_set": ["google_domain", "microsoft_domain", "geolocation-!cn"],
+        "query_type": ["A", "AAAA"],
+        "action": "route",
+        "server": "fakeip",
+        "rewrite_ttl": 1
+      },
+      {
+        "rule_set": ["cn_domain"],
+        "action": "route",
+        "server": "domestic"
+      },
+      {
+        "action": "evaluate",
+        "server": "foreign",
+        "client_subnet": "114.114.114.114/24"
+      },
+      {
+        "match_response": true,
+        "ip_accept_any": true,
+        "invert": true,
+        "action": "respond"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          { "match_response": true, "ip_is_private": true },
+          { "match_response": true, "rule_set": "cn_ip" }
+        ],
+        "action": "route",
+        "server": "domestic"
+      },
+      {
+        "query_type": ["A", "AAAA"],
+        "action": "route",
+        "server": "fakeip",
+        "rewrite_ttl": 1
+      }
+    ],
+    "final": "foreign",
+    "optimistic": {
+      "enabled": true,
+      "timeout": "1d"
+    },
+    "reverse_mapping": true
+  },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "::",
+      "listen_port": 7890
+    },
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 9898
+    },
+    {
+      "type": "redirect",
+      "tag": "redirect-in",
+      "listen": "::",
+      "listen_port": 9797
+    },
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "interface_name": "sing-box",
+      "address": ["172.18.0.1/30", "fdfe:dcba:9877::1/126"],
+      "auto_route": true,
+      "strict_route": true,
+      "endpoint_independent_nat": false,
+      "stack": "mixed"
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "🚀 全部节点",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"]
+    },
+    {
+      "type": "urltest",
+      "tag": "♻ 自动选择",
+      "url": "https://www.google.com/generate_204",
+      "interval": "5m",
+      "interrupt_exist_connections": false,
+      "outbounds": ["{all}"]
+    },
+    {
+      "tag": "🇺🇸 美国",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["美|🇺🇸|US|USA|SJC|JFK|LAX|ORD|ATL|DFW|SFO|MIA|SEA|IAD"]
+        }
+      ]
+    },
+    {
+      "tag": "🇯🇵 日本",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["日|🇯🇵|JP|Japan|NRT|HND|KIX|CTS|FUK"]
+        }
+      ]
+    },
+    {
+      "tag": "🇭🇰 香港",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["港|🇭🇰|HK|Hong|HKG"]
+        }
+      ]
+    },
+    {
+      "tag": "🇹🇼 台湾",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["台|🇼🇸|🇹🇼|TW|tai|TPE|TSA|KHH"]
+        }
+      ]
+    },
+    {
+      "tag": "🇸🇬 新加坡",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["坡|🇸🇬|SG|Sing|SIN|XSP"]
+        }
+      ]
+    },
+    {
+      "tag": "🇰🇷 韩国",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["韩|🇰🇷|韓|首尔|南朝鲜|KR|KOR|Korea|South"]
+        }
+      ]
+    },
+    {
+      "tag": "🇪🇺 欧洲",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "奥|比|法|德|爱尔|意|荷|西|瑞|英|🇦🇹|🇧🇪|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇳🇱|🇪🇸|🇨🇭|🇬🇧|CDG|FRA|AMS|MUC|BRU|DUB|FCO|MAD|BCN|ZRH|LHR|LON"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "🌏 其它地区",
+      "type": "selector",
+      "interrupt_exist_connections": true,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "exclude",
+          "keywords": [
+            "港|🇭🇰|HK|Hong|HKG|坡|🇸🇬|SG|Sing|SIN|XSP|日|🇯🇵|JP|Japan|NRT|HND|KIX|CTS|FUK|韩|🇰🇷|韓|首尔|南朝鲜|KR|KOR|Korea|South|美|🇺🇸|US|USA|SJC|JFK|LAX|ORD|ATL|DFW|SFO|MIA|SEA|IAD|台|🇼🇸|🇹🇼|TW|tai|TPE|TSA|KHH|奥|比|法|德|爱尔|意|荷|西|瑞|英|🇦🇹|🇧🇪|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇳🇱|🇪🇸|🇨🇭|🇬🇧|CDG|FRA|AMS|MUC|BRU|DUB|FCO|MAD|BCN|ZRH|LHR|LON"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "direct",
+      "tag": "🟢 DIRECT"
+    },
+    {
+      "tag": "🥤 默认",
+      "type": "selector",
+      "outbounds": [
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "🟢 DIRECT",
+        "{all}"
+      ],
+      "default": "🚀 全部节点"
+    },
+    {
+      "tag": "🥛 Spotify",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🫙 Microsoft",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🧊 Google",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🍿 Apple",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🧿 meta",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🕸 twitter",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🤖 AI",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🪙 币安",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🏦 Bybit",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "💬 VOXI",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🍡 Tracker",
+      "type": "selector",
+      "outbounds": [
+        "🟢 DIRECT",
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🟢 DIRECT"
+    },
+    {
+      "tag": "⭐ 其他非大陆",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🇨🇳 国内",
+      "type": "selector",
+      "outbounds": [
+        "🟢 DIRECT",
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🟢 DIRECT"
+    },
+    {
+      "tag": "📢 谷歌FCM",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🐟 漏网之鱼",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "🥤 默认"
+    },
+    {
+      "tag": "🪐 GLOBAL",
+      "type": "selector",
+      "outbounds": [
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "🟢 DIRECT",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "{all}"
+      ],
+      "default": "🚀 全部节点"
+    }
+  ],
+  "route": {
+    "default_http_client": "proxy",
+    "default_domain_resolver": {
+      "server": "domestic",
+      "strategy": "prefer_ipv6",
+      "disable_optimistic_cache": true
+    },
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "rule_set": ["override_destination"],
+        "action": "sniff-override-destination"
+      },
+      {
+        "action": "hijack-dns",
+        "protocol": "dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "🟢 DIRECT"
+      },
+      {
+        "action": "route",
+        "rule_set": ["private_domain", "fakeip_filter"],
+        "outbound": "🟢 DIRECT"
+      },
+      {
+        "action": "reject",
+        "rule_set": [
+          "qiufen_ad_doamin",
+          "category_ads_domain",
+          "category_porn_domain",
+          "blacklist"
+        ]
+      },
+      {
+        "action": "route",
+        "rule_set": ["direct_apps"],
+        "outbound": "🟢 DIRECT"
+      },
+      {
+        "action": "route",
+        "clash_mode": "direct",
+        "outbound": "🟢 DIRECT"
+      },
+      {
+        "action": "route",
+        "clash_mode": "global",
+        "outbound": "🪐 GLOBAL"
+      },
+      {
+        "action": "route",
+        "rule_set": ["voxi"],
+        "outbound": "💬 VOXI"
+      },
+      {
+        "action": "route",
+        "rule_set": ["bybit_domain"],
+        "outbound": "🏦 Bybit"
+      },
+      {
+        "action": "route",
+        "rule_set": ["binance_domain"],
+        "outbound": "🪙 币安"
+      },
+      {
+        "action": "route",
+        "rule_set": ["google_fcm"],
+        "outbound": "📢 谷歌FCM"
+      },
+      {
+        "action": "route",
+        "rule_set": ["ai_domain"],
+        "outbound": "🤖 AI"
+      },
+      {
+        "action": "route",
+        "rule_set": ["spotify_domain"],
+        "outbound": "🥛 Spotify"
+      },
+      {
+        "action": "route",
+        "rule_set": ["microsoft_domain"],
+        "outbound": "🫙 Microsoft"
+      },
+      {
+        "action": "route",
+        "rule_set": ["apple_domain"],
+        "outbound": "🍿 Apple"
+      },
+      {
+        "action": "route",
+        "rule_set": ["google_domain"],
+        "outbound": "🧊 Google"
+      },
+      {
+        "action": "route",
+        "rule_set": ["twitter_domain"],
+        "outbound": "🕸 twitter"
+      },
+      {
+        "action": "route",
+        "rule_set": ["meta_domain"],
+        "outbound": "🧿 meta"
+      },
+      {
+        "action": "route",
+        "rule_set": ["tracker_domain"],
+        "outbound": "🍡 Tracker"
+      },
+      {
+        "action": "route",
+        "rule_set": ["geolocation-!cn"],
+        "outbound": "⭐ 其他非大陆"
+      },
+      {
+        "action": "route",
+        "rule_set": ["cn_domain"],
+        "outbound": "🇨🇳 国内"
+      },
+      {
+        "action": "resolve",
+        "match_only": true
+      },
+      {
+        "action": "route",
+        "rule_set": ["google_ip"],
+        "outbound": "🧊 Google"
+      },
+      {
+        "action": "route",
+        "rule_set": ["cn_ip"],
+        "outbound": "🇨🇳 国内"
+      }
+    ],
+    "rule_set": [
+      {
+        "tag": "private_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/private.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "spotify_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/spotify.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "microsoft_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/microsoft.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "apple_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/apple.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "google_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/google.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "meta_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/meta.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "tracker_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/tracker.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "google_fcm",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/googlefcm.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "geolocation-!cn",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/geolocation-!cn.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "qiufen_ad_doamin",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Singbox.json",
+        "format": "source",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "category_ads_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/category-ads.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "category_porn_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/category-porn.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "cn_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/cn.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "google_ip",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geoip/google.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "cn_ip",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geoip/cn.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "fakeip_filter",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/zhiim/dotfiles/master/dot_config/sing-box/rule_set/fakeip-filter.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "blacklist",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/zhiim/dotfiles/master/dot_config/sing-box/rule_set/blacklist.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "bybit_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/bybit.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "binance_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/binance.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "ai_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/category-ai-!cn.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "twitter_domain",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/twitter.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "voxi",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/zhiim/dotfiles/master/dot_config/sing-box/rule_set/voxi.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "override_destination",
+        "type": "remote",
+        "url": "https://raw.githubusercontent.com/zhiim/dotfiles/master/dot_config/sing-box/rule_set/override-destination.srs",
+        "format": "binary",
+        "update_interval": "24h"
+      },
+      {
+        "tag": "direct_apps",
+        "type": "inline",
+        "rules": [
+          {
+            "process_path": [
+              "/usr/bin/linuxqq",
+              "/opt/wechat/wechat",
+              "/usr/bin/krdc"
+            ]
+          },
+          {
+            "process_path_regex": ["/tmp/\\.mount_linux.*/qq", "/opt/wechat/.*"]
+          },
+          {
+            "package_name": ["com.tencent.mm", "com.tencent.mobileqq"]
+          }
+        ]
+      }
+    ],
+    "auto_detect_interface": true,
+    "final": "🐟 漏网之鱼"
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "path": "cache.db",
+      "store_fakeip": true,
+      "store_dns": true,
+      "rdrc_timeout": "7d"
+    },
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "external_ui": "ui",
+      "external_ui_download_url": "https://github.com/Zephyruso/zashboard/releases/latest/download/dist-firasans-only.zip",
+      "secret": "",
+      "default_mode": "rule"
+    },
+    "urltest_unified_delay": true
+  },
+  "http_clients": [
+    {
+      "tag": "direct"
+    },
+    {
+      "tag": "proxy",
+      "detour": "🥤 默认"
+    }
+  ]
+}
