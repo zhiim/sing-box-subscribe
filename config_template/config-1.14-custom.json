@@ -36,7 +36,7 @@
         "server_port": 443,
         "path": "/dns-query",
         "domain_resolver": "hosts",
-        "detour": "🥤 默认"
+        "detour": "👑 DNS"
       },
       {
         "tag": "foreign_global",
@@ -606,6 +606,26 @@
         "{all}"
       ],
       "default": "🥤 默认"
+    },
+    {
+      "tag": "👑 DNS",
+      "type": "selector",
+      "outbounds": [
+        "🥤 默认",
+        "🇺🇸 美国",
+        "🇯🇵 日本",
+        "🇭🇰 香港",
+        "🇹🇼 台湾",
+        "🇸🇬 新加坡",
+        "🇰🇷 韩国",
+        "🇪🇺 欧洲",
+        "🌏 其它地区",
+        "🟢 DIRECT",
+        "🚀 全部节点",
+        "♻ 自动选择",
+        "{all}"
+      ],
+      "default": "♻ 自动选择"
     },
     {
       "tag": "🪐 GLOBAL",
